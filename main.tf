@@ -20,13 +20,14 @@ resource "azurerm_storage_container" "Container" {
   container_access_type = "private"
 }
 
-# Create a blob
+# Create a blob for each .tf file
 resource "azurerm_storage_blob" "blob" {
-  name                   = local.blob_name
+  for_each               = toset(local.blob_files)
+  name                   = each.value
   storage_account_name   = azurerm_storage_account.Storage.name
   storage_container_name = azurerm_storage_container.Container.name
   type                   = "Block"
-  source                 = "main.tf"
+  source                 = "${path.module}/${each.value}"
 }
 
 # Create a vnet

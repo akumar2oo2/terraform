@@ -1,3 +1,4 @@
+# Configure Azure provider with service principal credentials
 terraform {
   required_providers {
     azurerm = {

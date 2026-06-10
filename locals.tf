@@ -1,10 +1,19 @@
 locals {
+  # Common resource configuration
   resource_group_name = "MyRG"
   location            = "West Europe"
 
-  # Naming conventions
+  # Naming conventions for resources
   storage_account_name = "akstorage7347379"
   container_name       = "akcontainer"
-  blob_name            = "ak-main"
   vnet_name            = "ak-vnet"
+
+  # List of files to be uploaded as blobs
+  blob_files = [
+  "main.tf",
+  "locals.tf",
+  "provider.tf",
+  "variables.tf"
+  ]
+
 }

@@ -1,3 +1,4 @@
+# Define input variables for Azure authentication credentials
 variable "client_id" {}
 variable "client_secret" {}
 variable "tenant_id" {}
