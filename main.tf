@@ -72,3 +72,30 @@ resource "azurerm_public_ip" "public" {
   location            = local.location
   allocation_method   = "Static"
 }
+
+resource "azurerm_network_security_group" "nsg" {
+  for_each = local.virtual_network.subnets
+
+  name                = "nsg-${each.key}"
+  location            = local.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "sr-nsg-${each.key}"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_subnet_network_security_group_association" "nsg_assoc" {
+  for_each = local.virtual_network.subnets
+
+  subnet_id                 = azurerm_subnet.subnet[each.key].id
+  network_security_group_id = azurerm_network_security_group.nsg[each.key].id
+}
