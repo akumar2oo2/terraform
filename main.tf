@@ -32,18 +32,17 @@ resource "azurerm_storage_blob" "blob" {
 
 # Create a vnet
 resource "azurerm_virtual_network" "vnet" {
-  name                = local.vnet_name
+  name                = local.virtual_network.vnet_name
   location            = azurerm_resource_group.Resource.location
   resource_group_name = azurerm_resource_group.Resource.name
-  address_space       = ["10.0.0.0/16"]
+  address_space       = local.virtual_network.address_space
 
-  subnet {
-    name             = "subnet1"
-    address_prefixes = ["10.0.1.0/24"]
-  }
+  dynamic "subnet" {
+    for_each = local.virtual_network.subnets
 
-  subnet {
-    name             = "subnet2"
-    address_prefixes = ["10.0.2.0/24"]
+    content {
+      name             = "${local.virtual_network.vnet_name}-${subnet.key}"
+      address_prefixes = subnet.value.address_prefixes
+    }
   }
 }
