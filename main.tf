@@ -8,7 +8,7 @@ resource "azurerm_resource_group" "rg" {
 resource "azurerm_storage_account" "storage" {
   name                     = local.storage_account_name
   resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
+  location                 = local.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
@@ -34,7 +34,7 @@ resource "azurerm_storage_blob" "blob" {
 # Create a vnet
 resource "azurerm_virtual_network" "vnet" {
   name                = local.virtual_network.vnet_name
-  location            = azurerm_resource_group.rg.location
+  location            = local.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = local.virtual_network.address_space
 }
@@ -54,11 +54,21 @@ resource "azurerm_network_interface" "nic" {
 
   name                = "${each.key}-nic"
   location            = local.location
-  resource_group_name = local.resource_group_name
+  resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "ipconfig-${each.key}"
     subnet_id                     = azurerm_subnet.subnet[each.key].id
     private_ip_address_allocation = local.ip_configuration.private_ip_address_allocation
+    public_ip_address_id          = azurerm_public_ip.public[each.key].id
   }
+}
+
+resource "azurerm_public_ip" "public" {
+  for_each = local.virtual_network.subnets
+
+  name                = "PublicIp-${each.key}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = local.location
+  allocation_method   = "Static"
 }
