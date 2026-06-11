@@ -31,4 +31,8 @@ locals {
       }
     }
   }
+  # Naming convention for nic-ip-config
+  ip_configuration = {
+    private_ip_address_allocation = "Dynamic"
+  }
 }

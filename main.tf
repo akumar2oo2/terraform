@@ -22,7 +22,8 @@ resource "azurerm_storage_container" "container" {
 
 # Create a blob for each .tf file
 resource "azurerm_storage_blob" "blob" {
-  for_each               = toset(local.blob_files)
+  for_each = toset(local.blob_files)
+
   name                   = each.value
   storage_account_name   = azurerm_storage_account.storage.name
   storage_container_name = azurerm_storage_container.container.name
@@ -36,13 +37,28 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = local.virtual_network.address_space
+}
 
-  dynamic "subnet" {
-    for_each = local.virtual_network.subnets
+resource "azurerm_subnet" "subnet" {
+  for_each = local.virtual_network.subnets
 
-    content {
-      name             = "${local.virtual_network.vnet_name}-${subnet.key}"
-      address_prefixes = subnet.value.address_prefixes
-    }
+  name                 = "${local.virtual_network.vnet_name}-${each.key}"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = each.value.address_prefixes
+}
+
+#Create a NIC
+resource "azurerm_network_interface" "nic" {
+  for_each = local.virtual_network.subnets
+
+  name                = "${each.key}-nic"
+  location            = local.location
+  resource_group_name = local.resource_group_name
+
+  ip_configuration {
+    name                          = "ipconfig-${each.key}"
+    subnet_id                     = azurerm_subnet.subnet[each.key].id
+    private_ip_address_allocation = local.ip_configuration.private_ip_address_allocation
   }
 }
