@@ -1,7 +1,7 @@
 locals {
   # Common resource configuration
   resource_group_name = "MyRG"
-  location            = "centralindia"
+  location            = "australiacentral"
 
   # Naming conventions for storage and container
   storage_account_name = "akstorage7347379"

@@ -46,6 +46,9 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = each.value.address_prefixes
+  depends_on = [
+    azurerm_virtual_network.vnet
+  ]
 }
 
 #Create a NIC
@@ -98,4 +101,50 @@ resource "azurerm_subnet_network_security_group_association" "nsg_assoc" {
 
   subnet_id                 = azurerm_subnet.subnet[each.key].id
   network_security_group_id = azurerm_network_security_group.nsg[each.key].id
+}
+
+resource "azurerm_windows_virtual_machine" "vm" {
+  for_each = local.virtual_network.subnets
+
+  name                = "VM-${regex("[0-9]+", each.key)}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = local.location
+  size                = "Standard_D2alds_v6"
+  admin_username      = "adminuser"
+  admin_password      = var.admin_password
+  network_interface_ids = [
+    azurerm_network_interface.nic[each.key].id
+  ]
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "MicrosoftWindowsServer"
+    offer     = "WindowsServer"
+    sku       = "2022-datacenter-g2"
+    version   = "latest"
+  }
+}
+
+resource "azurerm_managed_disk" "datadisk" {
+  for_each = local.virtual_network.subnets
+
+  name                 = "Disk-${regex("[0-9]+", each.key)}"
+  location             = local.location
+  resource_group_name  = azurerm_resource_group.rg.name
+  storage_account_type = "Standard_LRS"
+  create_option        = "Empty"
+  disk_size_gb         = 10
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "disk_attach" {
+  for_each = local.virtual_network.subnets
+
+  managed_disk_id    = azurerm_managed_disk.datadisk[each.key].id
+  virtual_machine_id = azurerm_windows_virtual_machine.vm[each.key].id
+  lun                = 0
+  caching            = "ReadWrite"
 }
